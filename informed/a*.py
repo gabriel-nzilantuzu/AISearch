@@ -129,7 +129,7 @@ class Maze:
             node = frontier.remove()
             self.explored.add(node.state)
             self.print(self.explored)
-            time.sleep(0.7)
+            time.sleep(0.1)
             self.num_explored +=1
             if node.state == self.goal:
                 action = []
@@ -144,7 +144,6 @@ class Maze:
                 self.print()
                 print("goal found!")
                 return
-            print(node.distance + node.step)
             for action, state in self.neighbor(node.state):
                 distance = self.manhattan_distance(state)
                 if state not in self.explored and not frontier.contain_state(state):
