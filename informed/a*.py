@@ -1,49 +1,43 @@
-import time
 import sys
-import random
+import time, random
 
-class Node():
-    def __init__(self, state, parent, action):
+class Node:
+    def __init__(self, state, parent, action, distance, step):
         self.state = state
         self.parent = parent
         self.action = action
+        self.distance = distance
+        self.step = step
 
-class StackFrontier():
+    def __repr__(self):
+        return f"Node(state={self.state}, action={self.action}, distance={self.distance}, step={self.step})"
+
+class Frontier:
     def __init__(self):
         self.frontier = []
 
     def add(self, node):
-        self.frontier.append(node)
-
+        return self.frontier.append(node)
+    
     def empty(self):
         return len(self.frontier) == 0
     
     def remove(self):
         if self.empty():
-            raise Exception("Empty frontier")
+            raise Exception("Frontier is empty")
         else:
-            node = self.frontier[-1]
-            self.frontier = self.frontier[:-1]
+            node = min(self.frontier, key=lambda n: n.distance + n.step)
+            self.frontier.remove(node)
             return node
-    
+        
     def contain_state(self, state):
         return any(node.state == state for node in self.frontier)
 
-class QueueFrontier(StackFrontier):
-    def remove(self):
-        if self.empty():
-            raise Exception("Empty frontier")
-        else:
-            node = self.frontier[0]
-            self.frontier = self.frontier[1:]
-            return node
-    
-class Maze():
+class Maze:
     def __init__(self, filename):
         try:
             with open(filename) as f:
                 content = f.read()
-
             if content.count("A") != 1:
                 raise Exception("Maze should have exactly one starting point")
             
@@ -52,10 +46,8 @@ class Maze():
             
             file = content.splitlines()
             self.height = len(file)
-            self.width = max(len(line) for line in file)
-
+            self.width = max(len(row) for row in file)
             self.walls = []
-
             for i in range(self.height):
                 row = []
                 for j in range(self.width):
@@ -73,10 +65,17 @@ class Maze():
                     except IndexError:
                         row.append(False)
                 self.walls.append(row)
-        
         except FileNotFoundError:
-            raise Exception("File not found")
+            raise FileNotFoundError("File not Found")
+        
         self.solution = None
+
+    def manhattan_distance(self, state):
+        x1, y1 = state
+        x2, y2 = self.goal
+        horizontal_dist = abs(x2 - x1)
+        vertical_dist = abs(y2 - y1)
+        return horizontal_dist + vertical_dist
 
     def print(self, explored_nodes=None):
         print("\033[H", end="")
@@ -101,39 +100,37 @@ class Maze():
 
     def neighbor(self, state):
         row, col = state
-        candidates = [
+        candidate = [
             ("up", (row-1, col)),
             ("down", (row+1, col)),
-            ("right", (row, col+1)),
-            ("left", (row, col-1))
+            ("left", (row, col-1)),
+            ('right', (row, col+1))
         ]
-        random.shuffle(candidates)
+        random.shuffle(candidate)
         result = []
-        for action, (r, c) in candidates:
+        for action, (r,c) in candidate:
             if 0 <= r < self.height and 0 <= c < self.width and not self.walls[r][c]:
                 result.append((action, (r, c)))
-
         return result
-    
+
     def solve(self):
-        start = Node(state=self.start, parent=None, action=None)
+        distance = self.manhattan_distance(self.start)
+        step = 0
+        start = Node(state=self.start, parent=None, action=None, distance=distance, step=step)
+        frontier = Frontier()
+        frontier.add(start)
         self.explored = set()
         self.num_explored = 0
-        frontier = QueueFrontier()
-        frontier.add(start)
-
-        explored_nodes = set()
 
         while True:
             if frontier.empty():
-                raise Exception("Maze has no solution")
+                raise Exception("No solution to the maze")
             
             node = frontier.remove()
             self.explored.add(node.state)
-            explored_nodes.add(node.state)
-            
-            self.print(explored_nodes)
-            
+            self.print(self.explored)
+            time.sleep(0.7)
+            self.num_explored +=1
             if node.state == self.goal:
                 action = []
                 cells = []
@@ -147,17 +144,15 @@ class Maze():
                 self.print()
                 print("goal found!")
                 return
-            
-            time.sleep(0.1)
-            self.num_explored +=1
-            
+            print(node.distance + node.step)
             for action, state in self.neighbor(node.state):
+                distance = self.manhattan_distance(state)
                 if state not in self.explored and not frontier.contain_state(state):
-                    child = Node(state=state, parent=node, action=action)
+                    child = Node(state=state, parent=node, action=action, distance=distance, step=node.step+1)
                     frontier.add(child)
 
-if len(sys.argv) !=  2:
-    raise Exception("Usage: python maze.py maze.txt")
+if len(sys.argv) != 2:
+    raise Exception("Usage: python a*.py maze1.txt")
 
 m = Maze(sys.argv[1])
 print("\033c")
