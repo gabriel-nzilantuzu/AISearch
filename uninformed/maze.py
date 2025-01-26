@@ -80,7 +80,7 @@ class Maze():
 
     def print(self, explored_nodes=None):
         print("\033[H", end="")
-        
+        solution = self.solution[1] if self.solution is not None else None
         for i, row in enumerate(self.walls):
             for j, col in enumerate(row):
                 if col:
@@ -90,6 +90,8 @@ class Maze():
                 elif (i, j) == self.goal:
                     print("B", end="", flush=True)
                 elif explored_nodes and (i, j) in explored_nodes:
+                    print("*", end="", flush=True)
+                elif solution is not None and (i, j) in solution:
                     print("*", end="", flush=True)
                 else:
                     print(" ", end="", flush=True)
@@ -117,7 +119,7 @@ class Maze():
         start = Node(state=self.start, parent=None, action=None)
         self.explored = set()
         self.num_explored = 0
-        frontier = QueueFrontier()
+        frontier = StackFrontier()
         frontier.add(start)
 
         explored_nodes = set()
@@ -131,12 +133,23 @@ class Maze():
             explored_nodes.add(node.state)
             
             self.print(explored_nodes)
-
+            
             if node.state == self.goal:
-                print("Goal found!")
+                action = []
+                cells = []
+                while node.parent is not None:
+                    action.append(node.action)
+                    cells.append(node.state)
+                    node = node.parent
+                action.reverse()
+                cells.reverse()
+                self.solution = (action, cells)
+                self.print()
+                print("goal found!")
                 return
             
             time.sleep(0.1)
+            self.num_explored +=1
             
             for action, state in self.neighbor(node.state):
                 if state not in self.explored and not frontier.contain_state(state):
@@ -150,3 +163,4 @@ m = Maze(sys.argv[1])
 print("\033c")
 m.solve()
 print()
+print("node explored: ", m.num_explored)
