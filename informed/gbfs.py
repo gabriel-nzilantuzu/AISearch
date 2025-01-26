@@ -124,7 +124,7 @@ class Maze:
             node = frontier.remove()
             self.explored.add(node.state)
             self.print(self.explored)
-            time.sleep(0.3)
+            time.sleep(0.1)
             self.num_explored +=1
             if node.state == self.goal:
                 action = []
@@ -138,6 +138,8 @@ class Maze:
                 self.solution = (action, cells)
                 self.print()
                 print("goal found!")
+                print()
+                print("path distance: ", len(cells))
                 return
             
             for action, state in self.neighbor(node.state):

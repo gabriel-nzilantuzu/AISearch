@@ -146,9 +146,11 @@ class Maze():
                 self.solution = (action, cells)
                 self.print()
                 print("goal found!")
+                print()
+                print("path distance: ", len(cells))
                 return
             
-            time.sleep(0.1)
+            time.sleep(0.01)
             self.num_explored +=1
             
             for action, state in self.neighbor(node.state):
