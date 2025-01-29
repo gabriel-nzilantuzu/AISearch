@@ -150,7 +150,7 @@ class Maze():
                 print("path distance: ", len(cells))
                 return
             
-            time.sleep(0.01)
+            time.sleep(0.1)
             self.num_explored +=1
             
             for action, state in self.neighbor(node.state):
